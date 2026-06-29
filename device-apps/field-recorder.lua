@@ -51,6 +51,7 @@ local function pad3(n)
   while #s < 3 do s = "0" .. s end
   return s
 end
+local function inum(n) return tostring(floor(n)):match("^-?%d+") or "0" end
 local function fmt_hm(h, m)
   local hs = tostring(h); local ms = tostring(m)
   if #hs < 2 then hs = "0"..hs end
@@ -105,8 +106,8 @@ local function item_for(i)
   if i == 1 then
     if not _wifi     then return "No WiFi", nil
     elseif _dev == 0 then return "All clear", nil
-    elseif _upl > 0  then return _upl.." to free", nil
-    else                   return _dev.." clips", nil end
+    elseif _upl > 0  then return inum(_upl).." to free", nil
+    else                   return inum(_dev).." captures", nil end
   end
   local list = clip_list()
   local e = list[i - 1]
@@ -142,19 +143,21 @@ local function draw_main(ctx)
   if _sync and floor(ctx.time_ms/400)%2==0 then
     stx(2, 4, "syncing", 1, 0, 200, 255)
   end
+  local rem = rec.clips_remaining()
   local ns = 8
-  local s  = tostring(_rem)
+  local s  = inum(rem)
   local nx = floor((VW - #s*ns*6) / 2)
   if _rec then
     stx(nx, 10, s, ns, 255, 255, 255)
-    stx(floor((VW-48)/2), 82, "left", 2, 110, 110, 110)
+    stx(floor((VW-108)/2), 82, "recording", 2, 220, 60, 60)
     local full = {}
     for i = 1, N_BARS do full[i] = _wave[i] or 0.12 end
     draw_wave(full, #_wave, 0, floor(VW/2), 175, 38)
   else
     stx(nx, 70, s, ns, 255, 255, 255)
-    stx(floor((VW-48)/2), 142, "left", 2, 110, 110, 110)
-    if _rem == 0 then
+    local cap = "remaining"
+    stx(floor((VW - #cap*6) / 2), 142, cap, 1, 110, 110, 110)
+    if rem == 0 then
       stx(4, VH-36, "Connect WiFi",  1, 210, 110, 40)
       stx(4, VH-24, "to free space", 1, 210, 110, 40)
     else
