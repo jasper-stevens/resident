@@ -16,14 +16,16 @@ You only need to do this once.
 
 ```sql
 create table recordings (
-  id           uuid primary key,
-  device_id    text not null,
-  created_at   timestamptz not null default now(),
-  gps_label    text,
-  duration_ms  int not null,
-  waveform     jsonb not null default '[]',
-  storage_path text not null,
-  uploaded     boolean not null default true
+  id             uuid primary key,
+  device_id      text not null,
+  created_at     timestamptz not null default now(),
+  gps_label      text,
+  duration_ms    int not null,
+  waveform       jsonb not null default '[]',
+  storage_path   text not null,
+  group_id       int not null default 1,
+  capture_index  int not null default 1,
+  uploaded       boolean not null default true
 );
 
 alter table recordings enable row level security;
@@ -38,6 +40,13 @@ create policy "anon select recordings"
 ```
 
 3. Click **Run**.
+
+**Existing projects:** add grouping columns:
+
+```sql
+alter table recordings add column if not exists group_id int not null default 1;
+alter table recordings add column if not exists capture_index int not null default 1;
+```
 
 ## 3. Create the storage bucket
 

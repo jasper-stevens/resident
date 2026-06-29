@@ -1,6 +1,7 @@
 import { createAudioEngine, N_BARS } from "./audio.js";
 import { createStorage, MAX_CLIPS } from "./storage.js";
 import { createGps } from "./gps.js";
+import { compareClips, formatClipLabel, maxGroupId } from "./groups.js";
 import {
   fetchAudioBlob,
   isConfigured,
@@ -31,6 +32,32 @@ function fmtTs(date = new Date()) {
   return `Today ${hs}:${ms}`;
 }
 
+function toListEntry(c, source, extra = {}) {
+  const groupId = c.groupId ?? c.group_id ?? 1;
+  const captureIndex = c.captureIndex ?? c.capture_index ?? 1;
+  return {
+    id: c.id,
+    label: formatClipLabel(groupId, captureIndex),
+    group_id: groupId,
+    capture_index: captureIndex,
+    ts: c.ts,
+    gps: c.gps,
+    wave: c.wave ?? [],
+    source,
+    duration_ms: c.durationMs ?? c.duration_ms ?? REC_DUR_MS,
+    uploaded: !!c.uploaded,
+    ...extra,
+  };
+}
+
+function cloudMaxGroup() {
+  return maxGroupId(
+    cloudClips.map((c) => ({
+      group_id: c.groupId ?? c.group_id ?? 0,
+    })),
+  );
+}
+
 export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected }) {
   const audio = createAudioEngine();
   const storage = createStorage();
@@ -51,6 +78,7 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
   };
 
   async function refreshState() {
+    await storage.syncGroupState(cloudMaxGroup());
     state.remaining = await storage.clipsRemaining();
     state.onDevice = await storage.clipsOnDevice();
     state.uploaded = await storage.clipsUploaded();
@@ -58,15 +86,7 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
   }
 
   async function buildList() {
-    const local = (await storage.list()).map((c) => ({
-      id: c.id,
-      ts: c.ts,
-      gps: c.gps,
-      wave: c.wave ?? [],
-      source: "local",
-      duration_ms: c.durationMs ?? REC_DUR_MS,
-      uploaded: !!c.uploaded,
-    }));
+    const local = (await storage.list()).map((c) => toListEntry(c, "local"));
 
     const localIds = new Set(local.map((c) => c.id));
     const merged = [...local];
@@ -74,19 +94,12 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
     if (getWifiConnected()) {
       for (const c of cloudClips) {
         if (!localIds.has(c.id)) {
-          merged.push({
-            id: c.id,
-            ts: c.ts,
-            gps: c.gps,
-            wave: c.wave,
-            source: "cloud",
-            duration_ms: c.durationMs,
-            uploaded: true,
-          });
+          merged.push(toListEntry(c, "cloud", { storagePath: c.storagePath }));
         }
       }
     }
 
+    merged.sort(compareClips);
     return merged;
   }
 
@@ -113,6 +126,8 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
         gps: r.gps_label ?? "no fix",
         wave: Array.isArray(r.waveform) ? r.waveform : [],
         durationMs: r.duration_ms ?? REC_DUR_MS,
+        groupId: r.group_id ?? 1,
+        captureIndex: r.capture_index ?? 1,
         source: "cloud",
         storagePath: r.storage_path,
       }));
@@ -132,12 +147,15 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
 
     const id = makeId();
     const audioBytes = await result.wavBlob.arrayBuffer();
+    const { groupId, captureIndex } = await storage.nextCaptureSlot(cloudMaxGroup());
     const clip = {
       id,
       ts: fmtTs(),
       gps: gps.string(),
       wave: mergeWaves(liveWave, result.wave),
       durationMs: manual ? result.durationMs : REC_DUR_MS,
+      groupId,
+      captureIndex,
       source: "local",
       uploaded: false,
       createdAt: Date.now(),
@@ -151,6 +169,9 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
 
     emitEvent("recording_finished", {
       id: clip.id,
+      label: formatClipLabel(groupId, captureIndex),
+      group_id: groupId,
+      capture_index: captureIndex,
       ts: clip.ts,
       gps: clip.gps,
       wave: clip.wave,
@@ -178,12 +199,14 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
     syncing = true;
     emitEvent("sync_started", {});
 
+    let uploaded = 0;
     for (const clip of pending) {
       try {
         const blob = clip.audioBlob;
         if (!blob) continue;
         await uploadClip(supabaseCfg, getDeviceId(), clip, blob);
         await storage.markUploaded(clip.id);
+        uploaded += 1;
         emitEvent("upload_complete", { id: clip.id });
       } catch (err) {
         console.warn("[rec] upload failed:", clip.id, err);
@@ -193,6 +216,9 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
     syncing = false;
     emitEvent("sync_finished", {});
     await refreshCloud();
+    if (uploaded > 0) {
+      await storage.advanceGroup(cloudMaxGroup());
+    }
     await refreshState();
   }
 

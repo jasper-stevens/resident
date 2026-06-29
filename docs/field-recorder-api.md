@@ -24,8 +24,8 @@ rec.stop_playback()
 rec.delete_uploaded() -- free slots after upload
 
 local clips = rec.list()
--- each entry: { id, ts, gps, wave, source, duration_ms }
--- source is "local" or "cloud"
+-- each entry: { id, label, group_id, capture_index, ts, gps, wave, source, duration_ms }
+-- label is e.g. "001.A" (group 001, capture A); source is "local" or "cloud"
 ```
 
 ### Audio format (device target)
@@ -53,7 +53,7 @@ On device: NMEA parser from UART GPS module. On simulator: browser
 | Event | Data | When |
 |-------|------|------|
 | `recording_started` | — | Mic capture begins |
-| `recording_finished` | `id`, `ts`, `gps`, `wave`, `duration_ms` | Capture saved locally |
+| `recording_finished` | `id`, `label`, `group_id`, `capture_index`, `ts`, `gps`, `wave`, `duration_ms` | Capture saved locally |
 | `sync_started` | — | Upload batch begins |
 | `sync_finished` | — | Upload batch ends |
 | `upload_complete` | `id` | One clip uploaded |

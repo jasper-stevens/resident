@@ -42,6 +42,8 @@ export async function uploadClip(cfg, deviceId, clip, wavBlob) {
     duration_ms: clip.durationMs,
     waveform: clip.wave,
     storage_path: storagePath,
+    group_id: clip.groupId ?? 1,
+    capture_index: clip.captureIndex ?? 1,
     uploaded: true,
   };
 
@@ -62,9 +64,12 @@ export async function uploadClip(cfg, deviceId, clip, wavBlob) {
 
 export async function listCloudClips(cfg, deviceId) {
   const url = new URL(`${cfg.url}/rest/v1/recordings`);
-  url.searchParams.set("select", "id,device_id,created_at,gps_label,duration_ms,waveform,storage_path");
+  url.searchParams.set(
+    "select",
+    "id,device_id,created_at,gps_label,duration_ms,waveform,storage_path,group_id,capture_index",
+  );
   url.searchParams.set("device_id", `eq.${deviceId}`);
-  url.searchParams.set("order", "created_at.desc");
+  url.searchParams.set("order", "group_id.asc,capture_index.asc");
 
   const res = await fetch(url, { headers: headers(cfg) });
   if (!res.ok) throw new Error(`list recordings failed: ${res.status}`);

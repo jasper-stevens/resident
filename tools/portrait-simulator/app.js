@@ -1,4 +1,4 @@
-import { createSandbox } from "./sandbox.js?v=13";
+import { createSandbox } from "./sandbox.js?v=15";
 import { createRecorderBackend } from "./backends/recorder.js";
 import { createPower } from "./backends/power.js";
 

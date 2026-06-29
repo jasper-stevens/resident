@@ -70,7 +70,8 @@ rec.stop_playback()
 rec.delete_uploaded()
 
 local clips = rec.list()
--- { id, ts, gps, wave, source, duration_ms }
+-- { id, label, group_id, capture_index, ts, gps, wave, source, duration_ms }
+-- label e.g. "001.A" — group increments after each upload batch
 ```
 
 ### gps.*
@@ -99,7 +100,7 @@ function on_event(ctx, e)
   elseif e.name == "wifi_connected" then
     -- cloud sync enabled
   elseif e.name == "recording_finished" then
-    -- e.id, e.ts, e.gps, e.wave, e.duration_ms
+    -- e.label e.g. "001.A", e.group_id, e.capture_index
   end
 end
 ```
@@ -144,7 +145,10 @@ rec = setmetatable({
   play            = function() return true end,
   stop_playback   = function() return true end,
   delete_uploaded = function() end,
-  list            = function() return {} end,
+  list            = function() return {
+    { id = "a", label = "001.A", group_id = 1, capture_index = 1, source = "local",
+      ts = "Today 09:14", gps = "51.50N 0.12W", duration_ms = 10000, wave = {} },
+  } end,
 }, { __index = function() return function() end end })
 
 gps = setmetatable({

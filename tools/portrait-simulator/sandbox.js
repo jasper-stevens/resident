@@ -436,9 +436,15 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0, backends 
         lua.lua_createtable(L, items.length, 0);
         for (let i = 0; i < items.length; i++) {
           const c = items[i];
-          lua.lua_createtable(L, 0, 6);
+          lua.lua_createtable(L, 0, 9);
           pushValue(c.id);
           lua.lua_setfield(L, -2, to_luastring("id"));
+          pushValue(c.label ?? c.id);
+          lua.lua_setfield(L, -2, to_luastring("label"));
+          pushValue(c.group_id ?? 1);
+          lua.lua_setfield(L, -2, to_luastring("group_id"));
+          pushValue(c.capture_index ?? 1);
+          lua.lua_setfield(L, -2, to_luastring("capture_index"));
           pushValue(c.ts);
           lua.lua_setfield(L, -2, to_luastring("ts"));
           pushValue(c.gps);

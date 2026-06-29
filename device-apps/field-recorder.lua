@@ -126,11 +126,8 @@ local function item_for(i)
   local list = clip_list()
   local c = list[i - 1]
   if not c then return "?", nil end
-  local label = c.id:sub(1, 7)
+  local label = c.label or "?.?"
   if c.source == "cloud" then label = label.."*" end
-  if c.gps and c.gps ~= "" and c.gps ~= "no fix" then
-    label = label.." "..c.gps:sub(1, 10)
-  end
   return label, c
 end
 
