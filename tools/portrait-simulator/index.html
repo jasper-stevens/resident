@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resident Portrait Simulator</title>
+    <link rel="stylesheet" href="./style.css?v=7" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>Resident Portrait Simulator</h1>
+        <p class="lede">
+          Local 135×240 sandbox. Connects to the same relay as
+          <a href="https://resident.inanimate.tech/#try-it-now">resident.inanimate.tech</a>
+          — use your <code>sim-…</code> device ID with <code>push-app</code>.
+        </p>
+      </header>
+
+      <section class="controls">
+        <label class="field">
+          <span>Relay host</span>
+          <input id="relay" type="text" spellcheck="false" />
+        </label>
+        <label class="field field-grow">
+          <span>Device ID</span>
+          <input id="device-id" type="text" spellcheck="false" />
+        </label>
+        <button id="connect-btn" type="button">Connect</button>
+        <button id="copy-btn" type="button" class="secondary">Copy ID</button>
+        <button id="reload-btn" type="button" class="secondary" disabled>
+          Reload last app
+        </button>
+      </section>
+
+      <p id="status" class="status" data-tone="muted">Tap Connect, then push from your editor</p>
+
+      <section id="drop-zone" class="device">
+        <div class="bezel">
+          <canvas
+            id="screen"
+            width="135"
+            height="240"
+            aria-label="Simulator display"
+          ></canvas>
+        </div>
+        <div class="buttons">
+          <button id="btn-a" type="button">Btn A</button>
+          <button id="btn-b" type="button">Btn B</button>
+        </div>
+        <p id="app-name" class="app-name">idle</p>
+      </section>
+
+      <section class="help">
+        <h2>Quick start</h2>
+        <ol>
+          <li>Run <code>./tools/portrait-simulator/serve.sh</code> and open the page.</li>
+          <li>Click <strong>Connect</strong> (or reconnect with an existing <code>sim-…</code> ID).</li>
+          <li>Push an app: <code>push.sh --device-id sim-… app.lua</code></li>
+          <li>Or drop a <code>.lua</code> file onto the device.</li>
+          <li>After a hard refresh, click <strong>Reload last app</strong> — no re-push needed.</li>
+        </ol>
+        <p>
+          Keyboard shortcuts: <kbd>A</kbd> = button 0, <kbd>B</kbd> = button 1.
+        </p>
+      </section>
+    </main>
+    <script src="./vendor/fengari-web.js?v=7"></script>
+    <script type="module" src="./app.js?v=7"></script>
+  </body>
+</html>

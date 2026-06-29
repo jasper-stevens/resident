@@ -1,0 +1,210 @@
+:root {
+  color-scheme: dark;
+  --bg: #111318;
+  --panel: #1a1f29;
+  --ink: #e8ecf4;
+  --muted: #8b93a7;
+  --accent: #5b8cff;
+  --ok: #3dd68c;
+  --warn: #f5c451;
+  --error: #ff6b6b;
+  --bezel: #0a0c10;
+  --screen-scale: 3;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, #1d2433 0%, var(--bg) 55%),
+    var(--bg);
+  color: var(--ink);
+}
+
+a {
+  color: var(--accent);
+}
+
+code,
+kbd {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.header h1 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.lede {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.field-grow {
+  flex: 1 1 240px;
+}
+
+.field span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #2a3140;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+button {
+  align-self: end;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #2a3140;
+  color: var(--ink);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.status {
+  margin: 16px 0 0;
+  font-size: 0.95rem;
+}
+
+.status[data-tone="ok"] {
+  color: var(--ok);
+}
+
+.status[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.status[data-tone="error"] {
+  color: var(--error);
+}
+
+.status[data-tone="muted"] {
+  color: var(--muted);
+}
+
+.device {
+  margin-top: 28px;
+  padding: 24px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #222833 0%, #171b24 100%);
+  border: 1px solid #2f3747;
+  text-align: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.device.drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.bezel {
+  display: inline-block;
+  padding: 14px 14px 22px;
+  border-radius: 28px;
+  background: var(--bezel);
+  box-shadow:
+    inset 0 0 0 1px #2b313d,
+    0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+#screen {
+  display: block;
+  width: calc(135px * var(--screen-scale));
+  height: calc(240px * var(--screen-scale));
+  image-rendering: pixelated;
+  border-radius: 6px;
+  background: #808080;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.buttons button {
+  min-width: 88px;
+}
+
+.app-name {
+  margin: 14px 0 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.help {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid #2a3140;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.help h2 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.help ol {
+  margin: 0 0 12px;
+  padding-left: 1.2rem;
+}
+
+@media (max-width: 520px) {
+  :root {
+    --screen-scale: 2.2;
+  }
+}
