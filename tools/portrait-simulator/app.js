@@ -1,10 +1,12 @@
-import { createSandbox } from "./sandbox.js?v=15";
+import { createSandbox } from "./sandbox.js?v=19";
 import { createRecorderBackend } from "./backends/recorder.js";
 import { createPower } from "./backends/power.js";
+import { createGps } from "./backends/gps.js";
 
 const STORAGE_KEY = "resident-portrait-device-id";
 const LAST_APP_KEY = "resident-portrait-last-app";
 const WIFI_KEY = "resident-portrait-wifi";
+const GPS_SIM_KEY = "resident-portrait-gps-sim";
 const DEFAULT_RELAY = "resident.inanimate.tech";
 
 const els = {
@@ -17,6 +19,7 @@ const els = {
   copyBtn: document.getElementById("copy-btn"),
   reloadBtn: document.getElementById("reload-btn"),
   wifiBtn: document.getElementById("wifi-btn"),
+  gpsBtn: document.getElementById("gps-btn"),
   dropZone: document.getElementById("drop-zone"),
   btnA: document.getElementById("btn-a"),
   btnB: document.getElementById("btn-b"),
@@ -25,12 +28,14 @@ const els = {
 let sandbox = null;
 let recorder = null;
 let power = null;
+let gps = null;
 let tickTimer = null;
 let ws = null;
 let startedAt = performance.now();
 let lastTickAt = performance.now();
 let triggerCount = 0;
 let wifiConnected = false;
+let gpsSimMode = false;
 const buttonCounts = [0, 0];
 
 function makeDeviceId() {
@@ -85,6 +90,19 @@ function updateWifiButton() {
   els.wifiBtn.dataset.on = wifiConnected ? "true" : "false";
 }
 
+function updateGpsButton() {
+  els.gpsBtn.textContent = gpsSimMode ? "GPS: sim" : "GPS: live";
+  els.gpsBtn.dataset.sim = gpsSimMode ? "true" : "false";
+}
+
+function defaultGpsSimMode() {
+  const saved = localStorage.getItem(GPS_SIM_KEY);
+  if (saved === "1") return true;
+  if (saved === "0") return false;
+  const h = location.hostname;
+  return h === "localhost" || h === "127.0.0.1";
+}
+
 function makeCtx() {
   const now = new Date();
   return {
@@ -125,12 +143,24 @@ function ensurePower() {
   return power;
 }
 
+function ensureGps() {
+  if (!gps) {
+    gps = createGps();
+    gps.setSimMode(gpsSimMode);
+    gps.start();
+    void gps.request();
+  }
+  return gps;
+}
+
 function ensureRecorder() {
   if (recorder) return recorder;
+  const g = ensureGps();
   recorder = createRecorderBackend({
     emitEvent,
     getDeviceId: () => els.deviceId.value.trim(),
     getWifiConnected: () => wifiConnected,
+    gps: g,
   });
   return recorder;
 }
@@ -150,15 +180,12 @@ function ensureSandbox() {
   if (sandbox) return sandbox;
   const rec = ensureRecorder();
   const pwr = ensurePower();
+  const g = ensureGps();
   sandbox = createSandbox(els.canvas, {
     getButtonPressCount: () => buttonCounts[0] + buttonCounts[1],
     backends: {
       rec,
-      gps: {
-        fix: () => rec.gps_fix(),
-        pending: () => rec.gps_pending(),
-        string: () => rec.gps_string(),
-      },
+      gps: g,
       power: pwr,
     },
   });
@@ -251,6 +278,18 @@ function toggleWifi() {
   setWifi(!wifiConnected);
 }
 
+function setGpsSim(on) {
+  gpsSimMode = on;
+  localStorage.setItem(GPS_SIM_KEY, on ? "1" : "0");
+  updateGpsButton();
+  ensureGps().setSimMode(on);
+  sandbox?.paint();
+}
+
+function toggleGps() {
+  setGpsSim(!gpsSimMode);
+}
+
 function connect() {
   const deviceId = els.deviceId.value.trim() || makeDeviceId();
   els.deviceId.value = deviceId;
@@ -324,7 +363,9 @@ function init() {
   els.deviceId.value = saved || makeDeviceId();
   els.relay.value = DEFAULT_RELAY;
   wifiConnected = localStorage.getItem(WIFI_KEY) === "1";
+  gpsSimMode = defaultGpsSimMode();
   updateWifiButton();
+  updateGpsButton();
   paintIdleScreen();
 
   try {
@@ -335,10 +376,12 @@ function init() {
   }
 
   updateReloadButton();
+  ensureGps();
   ensureRecorder();
 
   els.connectBtn.addEventListener("click", connect);
   els.wifiBtn.addEventListener("click", toggleWifi);
+  els.gpsBtn.addEventListener("click", toggleGps);
   els.reloadBtn.addEventListener("click", () => {
     const last = readLastApp();
     if (!last) {

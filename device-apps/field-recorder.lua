@@ -58,7 +58,8 @@ end
 
 local function draw_status_bar()
   local r, g, b = status_color(gps.fix())
-  screen.text(2, 2, "GPS", 1, r, g, b)
+  local tag = gps.simulated() and "SIM" or "GPS"
+  screen.text(2, 2, tag, 1, r, g, b)
   draw_wifi_bars(30, 2, _wifi)
   draw_battery(VW - 24, 1)
 end
@@ -127,7 +128,7 @@ local function item_for(i)
   local c = list[i - 1]
   if not c then return "?", nil end
   local label = c.label or "?.?"
-  if c.source == "cloud" then label = label.."*" end
+  if c.source == "local" then label = label.."*" end
   return label, c
 end
 
@@ -161,6 +162,11 @@ local function draw_play(ctx)
   draw_wave(play_c.wave or {}, N_BARS, n_played, floor(VW/2), 140, 60)
   screen.text(34, VH-16, "B: back", 1, 65, 65, 65)
   screen.flip()
+end
+
+local function open_gallery()
+  gc = 1
+  view = "gallery"
 end
 
 local function gallery_action(ctx)
@@ -211,7 +217,7 @@ function on_event(ctx, e)
         rec.stop_playback()
         view = "gallery"
       elseif view == "gallery" then view = "main"
-      else view = "gallery" end
+      else open_gallery() end
     elseif view == "main" then
       if not rec.is_recording() and rec.clips_remaining() > 0 then
         _wave = {}

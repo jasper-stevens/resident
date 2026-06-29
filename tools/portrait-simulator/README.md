@@ -35,7 +35,7 @@ The simulator implements real `rec` and `gps` drivers for `device-apps/field-rec
 - **Mic recording** with live waveform (Web Audio API)
 - **Local playback** from IndexedDB (always available)
 - **Cloud upload/playback** via Supabase when **WiFi: on**
-- **GPS** from browser geolocation
+Browser geolocation when **GPS: live**; fixed London coords when **GPS: sim** (toggle next to WiFi). Status bar shows **GPS** or **SIM** accordingly.
 
 Setup Supabase once — see [SUPABASE.md](./SUPABASE.md).
 

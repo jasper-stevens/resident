@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Resident Portrait Simulator</title>
-    <link rel="stylesheet" href="./style.css?v=15" />
+    <link rel="stylesheet" href="./style.css?v=19" />
   </head>
   <body>
     <main class="page">
@@ -14,6 +14,7 @@
           Local 135×240 sandbox. Connects to the same relay as
           <a href="https://resident.inanimate.tech/#try-it-now">resident.inanimate.tech</a>
           — use your <code>sim-…</code> device ID with <code>push-app</code>.
+          <a href="../field-recorder-viewer/">Browse cloud recordings</a>.
         </p>
       </header>
 
@@ -33,6 +34,9 @@
         </button>
         <button id="wifi-btn" type="button" class="secondary wifi-btn">
           WiFi: off
+        </button>
+        <button id="gps-btn" type="button" class="secondary gps-btn">
+          GPS: sim
         </button>
       </section>
 
@@ -62,14 +66,15 @@
           <li>Push an app: <code>push.sh --device-id sim-… app.lua</code></li>
           <li>Or drop a <code>.lua</code> file onto the device.</li>
           <li>After a hard refresh, click <strong>Reload last app</strong> — no re-push needed.</li>
-          <li>Field recorder: toggle <strong>WiFi</strong> to simulate upload. See <code>SUPABASE.md</code>.</li>
+          <li>Field recorder: toggle <strong>WiFi</strong> to simulate upload, <strong>GPS</strong> for sim vs live coords.</li>
+          <li>Browse uploads: <a href="../field-recorder-viewer/">field recorder viewer</a> (use <code>./tools/serve-tools.sh</code> for one-port local dev).</li>
         </ol>
         <p>
           Keyboard shortcuts: <kbd>A</kbd> = button 0, <kbd>B</kbd> = button 1.
         </p>
       </section>
     </main>
-    <script src="./vendor/fengari-web.js?v=15"></script>
-    <script type="module" src="./app.js?v=15"></script>
+    <script src="./vendor/fengari-web.js?v=19"></script>
+    <script type="module" src="./app.js?v=19"></script>
   </body>
 </html>

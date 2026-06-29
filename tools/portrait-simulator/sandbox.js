@@ -477,6 +477,10 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0, backends 
         lua.lua_pushboolean(L, gps.pending());
         return 1;
       },
+      simulated() {
+        lua.lua_pushboolean(L, gps.simulated());
+        return 1;
+      },
       string() {
         lua.lua_pushstring(L, to_luastring(gps.string()));
         return 1;

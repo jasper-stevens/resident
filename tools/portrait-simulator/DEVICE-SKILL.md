@@ -77,6 +77,7 @@ local clips = rec.list()
 ### gps.*
 ```lua
 local ok = gps.fix()
+local sim = gps.simulated()   -- true when using localhost fallback coords
 local label = gps.string()    -- "51.50N 0.12W" or "no fix"
 ```
 
@@ -122,7 +123,8 @@ end
 - Two buttons (index 0 and 1).
 - Supabase config: copy `supabase.config.example.json` → `supabase.config.json`
   (see `SUPABASE.md`).
-- Cloud clips (marked `*` in gallery) require WiFi on to play.
+- Local clips (marked `*` in gallery) are on-device; cloud clips have no marker.
+- Cloud clips require WiFi on to play.
 
 ## Validation stubs
 
@@ -152,8 +154,9 @@ rec = setmetatable({
 }, { __index = function() return function() end end })
 
 gps = setmetatable({
-  fix    = function() return true end,
-  string = function() return "51.50N 0.12W" end,
+  fix        = function() return true end,
+  simulated  = function() return false end,
+  string     = function() return "51.50N 0.12W" end,
 }, { __index = function() return function() end end })
 
 power = setmetatable({

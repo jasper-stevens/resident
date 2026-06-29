@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Field Recorder Viewer</title>
+    <link rel="stylesheet" href="./style.css?v=1" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <h1>Field Recorder Viewer</h1>
+        <p class="lede">
+          Browse cloud recordings uploaded from
+          <a href="../portrait-simulator/">portrait simulator</a> devices.
+        </p>
+      </header>
+
+      <p id="status" class="status" data-tone="muted">Loading…</p>
+
+      <section id="view-devices" class="view hidden">
+        <h2 class="view-title">Devices</h2>
+        <div id="device-list" class="device-table"></div>
+      </section>
+
+      <section id="view-device" class="view hidden">
+        <nav class="breadcrumb">
+          <a href="#/" id="back-link">← All devices</a>
+        </nav>
+        <h2 id="device-title" class="view-title"></h2>
+        <div class="detail-layout">
+          <div class="clip-panel">
+            <h3 class="panel-title">Recordings</h3>
+            <div id="clip-list" class="clip-list"></div>
+          </div>
+          <div class="map-panel">
+            <h3 class="panel-title">Walk map</h3>
+            <canvas id="walk-map" width="400" height="400" aria-label="GPS walk map"></canvas>
+            <p class="map-hint">Points show recording locations; lines connect clips within each walk group.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-setup" class="view hidden setup">
+        <h2>Supabase not configured</h2>
+        <p>
+          Copy
+          <code>supabase.config.example.json</code> to
+          <code>supabase.config.json</code> and add your project credentials.
+        </p>
+        <p>
+          See
+          <a href="../portrait-simulator/SUPABASE.md">SUPABASE.md</a>
+          for setup steps.
+        </p>
+      </section>
+    </main>
+    <script type="module" src="./app.js?v=1"></script>
+  </body>
+</html>

@@ -109,6 +109,16 @@ button.wifi-btn[data-on="true"] {
   color: var(--ok);
 }
 
+button.gps-btn[data-sim="true"] {
+  background: color-mix(in srgb, var(--warn) 25%, #2a3140);
+  color: var(--warn);
+}
+
+button.gps-btn[data-sim="false"] {
+  background: color-mix(in srgb, var(--ok) 25%, #2a3140);
+  color: var(--ok);
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: wait;

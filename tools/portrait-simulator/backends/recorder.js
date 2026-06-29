@@ -1,7 +1,7 @@
 import { createAudioEngine, N_BARS } from "./audio.js";
 import { createStorage, MAX_CLIPS } from "./storage.js";
 import { createGps } from "./gps.js";
-import { compareClips, formatClipLabel, maxGroupId } from "./groups.js";
+import { formatClipLabel, maxGroupId } from "./groups.js";
 import {
   fetchAudioBlob,
   isConfigured,
@@ -35,6 +35,9 @@ function fmtTs(date = new Date()) {
 function toListEntry(c, source, extra = {}) {
   const groupId = c.groupId ?? c.group_id ?? 1;
   const captureIndex = c.captureIndex ?? c.capture_index ?? 1;
+  const sortMsRaw =
+    c.sort_ms ?? c.createdAt ?? (c.created_at ? Date.parse(c.created_at) : null);
+  const sortMs = Number.isFinite(sortMsRaw) ? sortMsRaw : 0;
   return {
     id: c.id,
     label: formatClipLabel(groupId, captureIndex),
@@ -46,22 +49,15 @@ function toListEntry(c, source, extra = {}) {
     source,
     duration_ms: c.durationMs ?? c.duration_ms ?? REC_DUR_MS,
     uploaded: !!c.uploaded,
+    sort_ms: sortMs,
     ...extra,
   };
 }
 
-function cloudMaxGroup() {
-  return maxGroupId(
-    cloudClips.map((c) => ({
-      group_id: c.groupId ?? c.group_id ?? 0,
-    })),
-  );
-}
-
-export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected }) {
+export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected, gps: gpsIn }) {
   const audio = createAudioEngine();
   const storage = createStorage();
-  const gps = createGps();
+  const gps = gpsIn ?? createGps();
 
   let syncing = false;
   let recordTimer = null;
@@ -69,6 +65,14 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
   let cloudClips = [];
   let supabaseCfg = null;
   let playingId = null;
+
+  function cloudMaxGroup() {
+    return maxGroupId(
+      cloudClips.map((c) => ({
+        group_id: c.groupId ?? c.group_id ?? 0,
+      })),
+    );
+  }
 
   const state = {
     remaining: MAX_CLIPS,
@@ -99,7 +103,7 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
       }
     }
 
-    merged.sort(compareClips);
+    merged.sort((a, b) => (b.sort_ms ?? 0) - (a.sort_ms ?? 0));
     return merged;
   }
 
@@ -130,6 +134,7 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
         captureIndex: r.capture_index ?? 1,
         source: "cloud",
         storagePath: r.storage_path,
+        created_at: r.created_at,
       }));
     } catch (err) {
       console.warn("[rec] cloud list failed:", err);
@@ -377,9 +382,6 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
   };
 
   void init();
-
-  // Ask for location when the recorder backend starts (browser will prompt).
-  void gps.request();
 
   return api;
 }

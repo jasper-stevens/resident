@@ -1,0 +1,298 @@
+:root {
+  color-scheme: dark;
+  --bg: #111318;
+  --panel: #1a1f29;
+  --ink: #e8ecf4;
+  --muted: #8b93a7;
+  --accent: #5b8cff;
+  --ok: #3dd68c;
+  --warn: #f5c451;
+  --error: #ff6b6b;
+  --border: #2a3140;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, #1d2433 0%, var(--bg) 55%),
+    var(--bg);
+  color: var(--ink);
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.header h1 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.lede {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.status {
+  margin: 16px 0 0;
+  font-size: 0.95rem;
+}
+
+.status[data-tone="ok"] {
+  color: var(--ok);
+}
+
+.status[data-tone="warn"] {
+  color: var(--warn);
+}
+
+.status[data-tone="error"] {
+  color: var(--error);
+}
+
+.status[data-tone="muted"] {
+  color: var(--muted);
+}
+
+.view {
+  margin-top: 28px;
+}
+
+.view.hidden {
+  display: none;
+}
+
+.view-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.breadcrumb {
+  margin-bottom: 8px;
+}
+
+.breadcrumb a {
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.device-table {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.device-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+}
+
+.device-row:last-child {
+  border-bottom: none;
+}
+
+.device-row:hover {
+  background: #222833;
+}
+
+.device-id {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.95rem;
+}
+
+.device-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-title {
+  margin: 0 0 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.clip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.clip-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.clip-card:hover,
+.clip-card.selected {
+  border-color: var(--accent);
+  background: #222833;
+}
+
+.clip-card.playing {
+  border-color: var(--ok);
+}
+
+.clip-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 3.5rem;
+}
+
+.clip-info {
+  min-width: 0;
+}
+
+.clip-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.clip-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  margin-top: 6px;
+}
+
+.clip-wave span {
+  display: block;
+  width: 3px;
+  min-height: 2px;
+  background: #3a4254;
+  border-radius: 1px;
+}
+
+.clip-wave span.on {
+  background: var(--accent);
+}
+
+.clip-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.clip-actions button.stop {
+  background: #2a3140;
+  color: var(--ink);
+}
+
+.clip-actions button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.map-panel {
+  position: sticky;
+  top: 20px;
+}
+
+#walk-map {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.map-hint {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+.setup {
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.setup h2 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.setup p {
+  margin: 0 0 12px;
+}
