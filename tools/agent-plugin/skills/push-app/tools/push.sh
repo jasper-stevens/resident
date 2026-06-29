@@ -57,7 +57,15 @@ if [[ -z "$code" ]]; then
 fi
 
 # Build the JSON envelope.
-payload=$(jq -n --arg code "$code" '{type: "app", code: $code}')
+app_name=""
+if [[ -n "$app_file" ]]; then
+  app_name=$(basename "$app_file" .lua)
+fi
+if [[ -n "$app_name" ]]; then
+  payload=$(jq -n --arg code "$code" --arg name "$app_name" '{type: "app", code: $code, name: $name}')
+else
+  payload=$(jq -n --arg code "$code" '{type: "app", code: $code}')
+fi
 
 endpoint="${base_url}/devices/${device_id}/send"
 
