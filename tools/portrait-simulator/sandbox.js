@@ -32,7 +32,7 @@ function smolHash(x, y) {
   return (h & 0xffffff) / 0xffffff;
 }
 
-export function createSandbox(canvas, { getButtonPressCount = () => 0 } = {}) {
+export function createSandbox(canvas, { getButtonPressCount = () => 0, backends = null } = {}) {
   const { lua, lauxlib, lualib, to_luastring, to_jsstring } = fengari();
   const isNil = (L, idx) => !!lua.lua_isnoneornil(L, idx);
   const luaString = (L, idx) => {
@@ -373,6 +373,129 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0 } = {}) {
     },
   });
 
+  if (backends?.rec) {
+    const rec = backends.rec;
+    registerModule("rec", {
+      clips_remaining() {
+        lua.lua_pushinteger(L, rec.clips_remaining());
+        return 1;
+      },
+      clips_on_device() {
+        lua.lua_pushinteger(L, rec.clips_on_device());
+        return 1;
+      },
+      clips_uploaded() {
+        lua.lua_pushinteger(L, rec.clips_uploaded());
+        return 1;
+      },
+      is_recording() {
+        lua.lua_pushboolean(L, rec.is_recording());
+        return 1;
+      },
+      is_syncing() {
+        lua.lua_pushboolean(L, rec.is_syncing());
+        return 1;
+      },
+      is_playing() {
+        lua.lua_pushboolean(L, rec.is_playing());
+        return 1;
+      },
+      amplitude() {
+        lua.lua_pushnumber(L, rec.amplitude());
+        return 1;
+      },
+      start() {
+        const ok = rec.clips_remaining() > 0 && !rec.is_recording();
+        if (ok) void rec.start();
+        lua.lua_pushboolean(L, ok);
+        return 1;
+      },
+      stop() {
+        const ok = rec.is_recording();
+        if (ok) void rec.stop();
+        lua.lua_pushboolean(L, ok);
+        return 1;
+      },
+      play() {
+        const id = luaString(L, 1);
+        if (id) void rec.play(id);
+        lua.lua_pushboolean(L, !!id);
+        return 1;
+      },
+      stop_playback() {
+        void rec.stop_playback();
+        lua.lua_pushboolean(L, true);
+        return 1;
+      },
+      delete_uploaded() {
+        void rec.delete_uploaded();
+        return 0;
+      },
+      list() {
+        const items = rec.list();
+        lua.lua_createtable(L, items.length, 0);
+        for (let i = 0; i < items.length; i++) {
+          const c = items[i];
+          lua.lua_createtable(L, 0, 6);
+          pushValue(c.id);
+          lua.lua_setfield(L, -2, to_luastring("id"));
+          pushValue(c.ts);
+          lua.lua_setfield(L, -2, to_luastring("ts"));
+          pushValue(c.gps);
+          lua.lua_setfield(L, -2, to_luastring("gps"));
+          pushValue(c.source);
+          lua.lua_setfield(L, -2, to_luastring("source"));
+          pushValue(c.duration_ms ?? 10000);
+          lua.lua_setfield(L, -2, to_luastring("duration_ms"));
+          lua.lua_createtable(L, (c.wave ?? []).length, 0);
+          for (let w = 0; w < (c.wave ?? []).length; w++) {
+            lua.lua_pushnumber(L, c.wave[w]);
+            lua.lua_rawseti(L, -2, w + 1);
+          }
+          lua.lua_setfield(L, -2, to_luastring("wave"));
+          lua.lua_rawseti(L, -2, i + 1);
+        }
+        return 1;
+      },
+    });
+  }
+
+  if (backends?.gps) {
+    const gps = backends.gps;
+    registerModule("gps", {
+      fix() {
+        lua.lua_pushboolean(L, gps.fix());
+        return 1;
+      },
+      pending() {
+        lua.lua_pushboolean(L, gps.pending());
+        return 1;
+      },
+      string() {
+        lua.lua_pushstring(L, to_luastring(gps.string()));
+        return 1;
+      },
+    });
+  }
+
+  if (backends?.power) {
+    const power = backends.power;
+    registerModule("power", {
+      level() {
+        lua.lua_pushinteger(L, power.level());
+        return 1;
+      },
+      charging() {
+        lua.lua_pushboolean(L, power.charging());
+        return 1;
+      },
+      full() {
+        lua.lua_pushboolean(L, power.full());
+        return 1;
+      },
+    });
+  }
+
   const registerGlobal = (name, fn) => {
     lua.lua_pushjsfunction(L, fn);
     lua.lua_setglobal(L, to_luastring(name));
@@ -456,7 +579,25 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0 } = {}) {
     }
   };
 
-  return {
+  const emitEvent = (name, data = {}) => {
+    const event = { name, ...data };
+    return sandboxApi.call("on_event", makeCtxForEvent(), event);
+  };
+
+  const makeCtxForEvent = () => {
+    const now = new Date();
+    return {
+      time_ms: 0,
+      trigger_count: 0,
+      utc_h: now.getUTCHours(),
+      utc_m: now.getUTCMinutes(),
+      localtime_h: now.getHours(),
+      localtime_m: now.getMinutes(),
+      day_id: Math.floor(performance.now() / 86400000),
+    };
+  };
+
+  const sandboxApi = {
     loadSource(source) {
       if (lauxlib.luaL_loadstring(L, to_luastring(source)) !== 0) return popError();
       if (lua.lua_pcall(L, 0, 0, 0) !== 0) return popError();
@@ -496,5 +637,9 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0 } = {}) {
       lua.lua_close(L);
     },
     tickIntervalMs: TICK_MS,
+    emitEvent,
+    backends,
   };
+
+  return sandboxApi;
 }

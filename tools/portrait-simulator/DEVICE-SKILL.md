@@ -4,8 +4,9 @@ In-browser Resident sandbox with a **135×240 portrait** display. Matches the
 relay protocol of `resident.inanimate.tech` but uses vertical layout instead of
 the official landscape M5Stick simulator.
 
-Apps drive the screen as primary output and respond to button presses. IMU and
-buzzer are stubbed (no-op / static readings) like the online simulator.
+Apps drive the screen as primary output and respond to button presses. Field
+recorder apps can use real microphone, speaker, GPS, and Supabase sync via the
+`rec` and `gps` modules.
 
 ## Hardware
 
@@ -16,9 +17,16 @@ Double-buffered: draw off-screen, then `screen.flip()` to push the frame.
 **Buttons:** Two virtual buttons, indexed 0 (A) and 1 (B). Surface as
 `button` events with an `index` field.
 
+**Microphone / speaker:** Real browser audio via Web Audio API (field recorder).
+
+**GPS:** Browser geolocation (`navigator.geolocation`).
+
+**WiFi:** Simulated with the **WiFi: on/off** meta toggle in the simulator UI.
+
 **IMU:** Stub — `accel()` returns `(0, 0, 1)`, `gyro()` returns zeros.
 
-**Buzzer:** Stub — `beep` / `tone` / `stop` are no-ops.
+**Buzzer:** Stub — `beep` / `tone` / `stop` are no-ops (playback uses speaker
+via `rec.play()`).
 
 ## Lua Modules
 
@@ -43,15 +51,38 @@ local h = screen.height()                        -- 240
 
 **MUST:** call `screen.flip()` after every draw sequence.
 
+### rec.*
+**Hardware:** Mac mic + speaker, IndexedDB local storage, Supabase cloud sync.
+
+```lua
+local rem = rec.clips_remaining()
+local dev = rec.clips_on_device()
+local upl = rec.clips_uploaded()
+
+if rec.is_recording() then
+  local amp = rec.amplitude()   -- 0.0–1.0 for waveform
+end
+
+rec.start()                   -- 10s capture from mic
+rec.stop()                    -- end early
+rec.play(clip_id)             -- local always; cloud when WiFi on
+rec.stop_playback()
+rec.delete_uploaded()
+
+local clips = rec.list()
+-- { id, ts, gps, wave, source, duration_ms }
+```
+
+### gps.*
+```lua
+local ok = gps.fix()
+local label = gps.string()    -- "51.50N 0.12W" or "no fix"
+```
+
 ### imu.*
 ```lua
 local ax, ay, az = imu.accel()  -- stub: 0, 0, 1
 local gx, gy, gz = imu.gyro()   -- stub: 0, 0, 0
-```
-
-### buzzer.*
-```lua
-buzzer.beep(440, 80)   -- no-op in simulator
 ```
 
 ### button.*
@@ -65,15 +96,32 @@ Prefer `on_event` for button handling:
 function on_event(ctx, e)
   if e.name == "button" and e.index == 0 then
     -- button A
+  elseif e.name == "wifi_connected" then
+    -- cloud sync enabled
+  elseif e.name == "recording_finished" then
+    -- e.id, e.ts, e.gps, e.wave, e.duration_ms
   end
 end
 ```
 
+### Driver events
+
+| Event | When |
+|-------|------|
+| `recording_started` | Mic capture begins |
+| `recording_finished` | Clip saved locally |
+| `sync_started` / `sync_finished` | Upload batch |
+| `upload_complete` | One clip uploaded (`e.id`) |
+| `wifi_connected` / `wifi_disconnected` | WiFi toggle |
+| `playback_finished` | Speaker done (`e.id`) |
+
 ## Constraints
 
-- Screen: **135×240 portrait** — design layouts for tall/narrow, not 240×135.
+- Screen: **135×240 portrait** — design layouts for tall/narrow.
 - Two buttons (index 0 and 1).
-- IMU and buzzer are stubs only.
+- Supabase config: copy `supabase.config.example.json` → `supabase.config.json`
+  (see `SUPABASE.md`).
+- Cloud clips (marked `*` in gallery) require WiFi on to play.
 
 ## Validation stubs
 
@@ -81,6 +129,33 @@ end
 screen = setmetatable({
   width  = function() return 135 end,
   height = function() return 240 end,
+}, { __index = function() return function() end end })
+
+rec = setmetatable({
+  clips_remaining = function() return 7 end,
+  clips_on_device = function() return 0 end,
+  clips_uploaded  = function() return 0 end,
+  is_recording    = function() return false end,
+  is_syncing      = function() return false end,
+  is_playing      = function() return false end,
+  amplitude       = function() return 0.5 end,
+  start           = function() return true end,
+  stop            = function() return false end,
+  play            = function() return true end,
+  stop_playback   = function() return true end,
+  delete_uploaded = function() end,
+  list            = function() return {} end,
+}, { __index = function() return function() end end })
+
+gps = setmetatable({
+  fix    = function() return true end,
+  string = function() return "51.50N 0.12W" end,
+}, { __index = function() return function() end end })
+
+power = setmetatable({
+  level    = function() return 92 end,
+  charging = function() return true end,
+  full     = function() return false end,
 }, { __index = function() return function() end end })
 
 imu = setmetatable({

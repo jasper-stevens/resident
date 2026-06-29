@@ -104,6 +104,11 @@ button.secondary {
   color: var(--ink);
 }
 
+button.wifi-btn[data-on="true"] {
+  background: color-mix(in srgb, var(--ok) 25%, #2a3140);
+  color: var(--ok);
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: wait;

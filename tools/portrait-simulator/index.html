@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Resident Portrait Simulator</title>
-    <link rel="stylesheet" href="./style.css?v=7" />
+    <link rel="stylesheet" href="./style.css?v=13" />
   </head>
   <body>
     <main class="page">
@@ -30,6 +30,9 @@
         <button id="copy-btn" type="button" class="secondary">Copy ID</button>
         <button id="reload-btn" type="button" class="secondary" disabled>
           Reload last app
+        </button>
+        <button id="wifi-btn" type="button" class="secondary wifi-btn">
+          WiFi: off
         </button>
       </section>
 
@@ -59,13 +62,14 @@
           <li>Push an app: <code>push.sh --device-id sim-… app.lua</code></li>
           <li>Or drop a <code>.lua</code> file onto the device.</li>
           <li>After a hard refresh, click <strong>Reload last app</strong> — no re-push needed.</li>
+          <li>Field recorder: toggle <strong>WiFi</strong> to simulate upload. See <code>SUPABASE.md</code>.</li>
         </ol>
         <p>
           Keyboard shortcuts: <kbd>A</kbd> = button 0, <kbd>B</kbd> = button 1.
         </p>
       </section>
     </main>
-    <script src="./vendor/fengari-web.js?v=7"></script>
-    <script type="module" src="./app.js?v=7"></script>
+    <script src="./vendor/fengari-web.js?v=13"></script>
+    <script type="module" src="./app.js?v=13"></script>
   </body>
 </html>

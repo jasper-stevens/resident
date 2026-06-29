@@ -1,7 +1,10 @@
-import { createSandbox } from "./sandbox.js?v=7";
+import { createSandbox } from "./sandbox.js?v=13";
+import { createRecorderBackend } from "./backends/recorder.js";
+import { createPower } from "./backends/power.js";
 
 const STORAGE_KEY = "resident-portrait-device-id";
 const LAST_APP_KEY = "resident-portrait-last-app";
+const WIFI_KEY = "resident-portrait-wifi";
 const DEFAULT_RELAY = "resident.inanimate.tech";
 
 const els = {
@@ -13,17 +16,21 @@ const els = {
   connectBtn: document.getElementById("connect-btn"),
   copyBtn: document.getElementById("copy-btn"),
   reloadBtn: document.getElementById("reload-btn"),
+  wifiBtn: document.getElementById("wifi-btn"),
   dropZone: document.getElementById("drop-zone"),
   btnA: document.getElementById("btn-a"),
   btnB: document.getElementById("btn-b"),
 };
 
 let sandbox = null;
+let recorder = null;
+let power = null;
 let tickTimer = null;
 let ws = null;
 let startedAt = performance.now();
 let lastTickAt = performance.now();
 let triggerCount = 0;
+let wifiConnected = false;
 const buttonCounts = [0, 0];
 
 function makeDeviceId() {
@@ -73,6 +80,11 @@ function updateReloadButton() {
   els.reloadBtn.disabled = !readLastApp();
 }
 
+function updateWifiButton() {
+  els.wifiBtn.textContent = wifiConnected ? "WiFi: on" : "WiFi: off";
+  els.wifiBtn.dataset.on = wifiConnected ? "true" : "false";
+}
+
 function makeCtx() {
   const now = new Date();
   return {
@@ -101,6 +113,28 @@ function paintIdleScreen() {
   setAppName("idle");
 }
 
+function emitEvent(name, data = {}) {
+  if (!sandbox) return;
+  const err = sandbox.call("on_event", makeCtx(), { name, ...data });
+  if (err) console.error("[portrait-sim] on_event:", err);
+  sandbox.paint();
+}
+
+function ensurePower() {
+  if (!power) power = createPower();
+  return power;
+}
+
+function ensureRecorder() {
+  if (recorder) return recorder;
+  recorder = createRecorderBackend({
+    emitEvent,
+    getDeviceId: () => els.deviceId.value.trim(),
+    getWifiConnected: () => wifiConnected,
+  });
+  return recorder;
+}
+
 function stopApp() {
   if (tickTimer !== null) {
     window.clearInterval(tickTimer);
@@ -114,8 +148,19 @@ function stopApp() {
 function ensureSandbox() {
   assertRuntime();
   if (sandbox) return sandbox;
+  const rec = ensureRecorder();
+  const pwr = ensurePower();
   sandbox = createSandbox(els.canvas, {
     getButtonPressCount: () => buttonCounts[0] + buttonCounts[1],
+    backends: {
+      rec,
+      gps: {
+        fix: () => rec.gps_fix(),
+        pending: () => rec.gps_pending(),
+        string: () => rec.gps_string(),
+      },
+      power: pwr,
+    },
   });
   return sandbox;
 }
@@ -125,6 +170,7 @@ function startTicking() {
   lastTickAt = performance.now();
   tickTimer = window.setInterval(() => {
     if (!sandbox) return;
+    recorder?.tick();
     const now = performance.now();
     const dt = now - lastTickAt;
     lastTickAt = now;
@@ -153,6 +199,11 @@ function loadApp(label, source) {
     const initErr = s.call("init", makeCtx());
     if (initErr) console.error(`[portrait-sim] init ${label}:`, initErr);
 
+    if (wifiConnected) {
+      s.call("on_event", makeCtx(), { name: "wifi_connected" });
+      void recorder?.onWifiConnected();
+    }
+
     s.paint();
     startTicking();
     setAppName(`${label}.lua`);
@@ -180,6 +231,24 @@ function pressButton(index) {
   const err = sandbox.call("on_event", makeCtx(), event);
   if (err) console.error("[portrait-sim] on_event:", err);
   sandbox.paint();
+}
+
+function setWifi(on) {
+  wifiConnected = on;
+  localStorage.setItem(WIFI_KEY, on ? "1" : "0");
+  updateWifiButton();
+  if (!sandbox) return;
+  if (on) {
+    emitEvent("wifi_connected");
+    void recorder?.onWifiConnected();
+  } else {
+    emitEvent("wifi_disconnected");
+    void recorder?.onWifiDisconnected();
+  }
+}
+
+function toggleWifi() {
+  setWifi(!wifiConnected);
 }
 
 function connect() {
@@ -254,6 +323,8 @@ function init() {
   const saved = localStorage.getItem(STORAGE_KEY);
   els.deviceId.value = saved || makeDeviceId();
   els.relay.value = DEFAULT_RELAY;
+  wifiConnected = localStorage.getItem(WIFI_KEY) === "1";
+  updateWifiButton();
   paintIdleScreen();
 
   try {
@@ -264,8 +335,10 @@ function init() {
   }
 
   updateReloadButton();
+  ensureRecorder();
 
   els.connectBtn.addEventListener("click", connect);
+  els.wifiBtn.addEventListener("click", toggleWifi);
   els.reloadBtn.addEventListener("click", () => {
     const last = readLastApp();
     if (!last) {
@@ -274,6 +347,7 @@ function init() {
     }
     if (loadApp(last.label, last.source)) {
       setStatus(`Reloaded ${last.label}.lua`, "ok");
+      if (wifiConnected) void recorder?.onWifiConnected();
     }
   });
   els.copyBtn.addEventListener("click", async () => {

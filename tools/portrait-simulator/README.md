@@ -22,17 +22,22 @@ tools/agent-plugin/skills/push-app/tools/push.sh \
   device-apps/your-app.lua
 ```
 
-Save the device ID once so you do not have to copy it every session:
-
-```bash
-echo 'sim-xxxxxxxx' > .resident-device-id
-```
-
 When generating apps for this surface, point `create-app` / `validate-app` at the bundled device skill:
 
 ```bash
 validate.sh --device-skill tools/portrait-simulator/DEVICE-SKILL.md device-apps/foo.lua
 ```
+
+## Field recorder (mic + Supabase)
+
+The simulator implements real `rec` and `gps` drivers for `device-apps/field-recorder.lua`:
+
+- **Mic recording** with live waveform (Web Audio API)
+- **Local playback** from IndexedDB (always available)
+- **Cloud upload/playback** via Supabase when **WiFi: on**
+- **GPS** from browser geolocation
+
+Setup Supabase once — see [SUPABASE.md](./SUPABASE.md).
 
 ## What you get
 
@@ -43,13 +48,19 @@ validate.sh --device-skill tools/portrait-simulator/DEVICE-SKILL.md device-apps/
 | Push via `sim-…` ID | yes | yes |
 | Drag-and-drop `.lua` | yes | yes |
 | Buttons | 2 (A / B) | 2 |
+| Mic / speaker / GPS | yes (`rec`, `gps`) | no |
+| WiFi simulation | toggle button | no |
 | 3D M5Stick chrome | no | yes |
 
 ## Files
 
-- `sandbox.js` — Fengari runtime + `screen` / `imu` / `buzzer` stubs
-- `app.js` — UI, WebSocket relay client, tick loop
-- `DEVICE-SKILL.md` — Lua surface for agents (portrait dimensions)
+- `sandbox.js` — Fengari runtime + driver modules
+- `app.js` — UI, WebSocket relay, tick loop, WiFi toggle
+- `backends/` — Mac implementations of `rec` / `gps`
+- `DEVICE-SKILL.md` — Lua surface for agents
+- `SUPABASE.md` — cloud storage setup walkthrough
+
+Device swap notes: [docs/field-recorder-api.md](../docs/field-recorder-api.md)
 
 ## Self-hosted relay
 
