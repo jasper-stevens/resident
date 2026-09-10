@@ -252,6 +252,10 @@ export function createRecorderBackend({ emitEvent, getDeviceId, getWifiConnected
       return audio.isPlaying();
     },
 
+    wifi_up() {
+      return getWifiConnected();
+    },
+
     amplitude() {
       return audio.getAmplitude();
     },

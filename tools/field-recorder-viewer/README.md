@@ -1,6 +1,8 @@
 # Field Recorder Viewer
 
-Browse cloud recordings uploaded from the portrait simulator field recorder.
+Browse cloud recordings uploaded from **any** field recorder device — M5Stick
+hardware or the portrait simulator — as long as they use the same Supabase
+project and `recordings` table.
 
 ## Run locally
 

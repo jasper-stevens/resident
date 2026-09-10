@@ -1,6 +1,9 @@
 local VW = screen.width()
 local VH = screen.height()
 
+-- Bump on every push so you can confirm the device received the new app.
+local APP_VER = "17"
+
 local N_BARS  = 20
 local REC_DUR = 10000
 local DCLICK  = 350
@@ -21,6 +24,16 @@ local function inum(n) return tostring(floor(n)):match("^-?%d+") or "0" end
 
 local function status_color(on)
   if on then return 255, 255, 255 else return 90, 90, 90 end
+end
+
+-- gps.state(): 0=no module, 1=idle, 2=searching, 3=fix
+local function gps_status()
+  if gps.simulated() then return "SIM", 255, 180, 40 end
+  if gps.fix() then return "GPS", 255, 255, 255 end
+  if gps.pending() then return "GPS", 255, 180, 40 end
+  local st = gps.state and gps.state() or 1
+  if st == 0 then return "---", 90, 90, 90 end
+  return "GPS", 90, 90, 90
 end
 
 local function draw_wifi_bars(x, y, on)
@@ -57,11 +70,12 @@ local function draw_battery(x, y)
 end
 
 local function draw_status_bar()
-  local r, g, b = status_color(gps.fix())
-  local tag = gps.simulated() and "SIM" or "GPS"
+  local tag, r, g, b = gps_status()
   screen.text(2, 2, tag, 1, r, g, b)
   draw_wifi_bars(30, 2, _wifi)
-  draw_battery(VW - 24, 1)
+  local bat_x = VW - 22
+  draw_battery(bat_x, 1)
+  screen.text(2, VH - 12, "v" .. APP_VER, 1, 140, 140, 140)
 end
 
 local function draw_wave(wave, n_fill, n_played, cx, cy, bh_max)
@@ -98,8 +112,8 @@ local function draw_main(ctx)
     local cap = "remaining"
     screen.text(floor((VW - #cap*6) / 2), 148, cap, 1, 110, 110, 110)
     if rem == 0 then
-      screen.text(4, VH-36, "Connect WiFi",  1, 210, 110, 40)
-      screen.text(4, VH-24, "to free space", 1, 210, 110, 40)
+      screen.text(4, VH-36, "Gallery:", 1, 210, 110, 40)
+      screen.text(4, VH-24, "Connect",  1, 210, 110, 40)
     else
       screen.text(32, VH-16, "A: record", 1, 65, 65, 65)
     end
@@ -112,20 +126,28 @@ local function clip_list()
 end
 
 local function n_items()
-  return 1 + #clip_list()
+  local n = 1
+  if _wifi then n = n + 1 end
+  return n + #clip_list()
 end
 
 local function item_for(i)
   if i == 1 then
     if not _wifi then
-      if rec.clips_uploaded() > 0 then return "No WiFi", nil end
+      if rec.wifi_connecting and rec.wifi_connecting() then
+        return "Connecting...", nil
+      end
+      return "Connect", nil
     end
+    return "Disconnect", nil
+  end
+  if _wifi and i == 2 then
     if rec.clips_on_device() == 0 then return "All clear", nil
     elseif rec.clips_uploaded() > 0 then return inum(rec.clips_uploaded()).." to free", nil
     else return inum(rec.clips_on_device()).." captures", nil end
   end
   local list = clip_list()
-  local c = list[i - 1]
+  local c = list[i - (_wifi and 2 or 1)]
   if not c then return "?", nil end
   local label = c.label or "?.?"
   if c.source == "local" then label = label.."*" end
@@ -170,10 +192,20 @@ local function open_gallery()
 end
 
 local function gallery_action(ctx)
-  local label, clip = item_for(gc)
-  if gc == 1 and rec.clips_uploaded() > 0 and _wifi then
+  if gc == 1 then
+    if _wifi then
+      if rec.disconnect_wifi then rec.disconnect_wifi() end
+    elseif not (rec.wifi_connecting and rec.wifi_connecting()) then
+      if rec.connect_wifi then rec.connect_wifi() end
+    end
+    return
+  end
+  if _wifi and gc == 2 and rec.clips_uploaded() > 0 then
     rec.delete_uploaded()
-  elseif clip then
+    return
+  end
+  local label, clip = item_for(gc)
+  if clip then
     if clip.source == "cloud" and not _wifi then return end
     play_id = label
     play_c = clip
@@ -184,7 +216,7 @@ local function gallery_action(ctx)
 end
 
 function init(ctx)
-  _wifi = false
+  _wifi = rec.wifi_up()
   draw_main(ctx)
 end
 

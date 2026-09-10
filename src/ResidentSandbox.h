@@ -120,6 +120,12 @@ public:
     bool isConnected() const;
     bool isTimeSynced() const;
 
+    // On-demand WiFi (requires cfg.network and deferNetworkSetup, or after
+    // disconnectNetwork()). No-op when !hasNetwork().
+    void connectNetwork();
+    void disconnectNetwork();
+    bool isNetworkHeldOff() const { return _networkHeldOff; }
+
     // Test hooks — only used by native tests. Exposed here because the mock
     // Timezone carries its configuration per-instance.
     Timezone& timezoneForTest() { return _tz; }
@@ -234,6 +240,11 @@ private:
     // standalone setup): identity screen + countdown if an app is persisted,
     // else just the identity screen. No-op once an app is loaded/counting down.
     void enterIdleScreen();
+
+    void resetCourierClient();
+    bool canRunAppTick() const;
+
+    bool _networkHeldOff = false;
 
     // SystemButton gesture tracking during the countdown (Pending): a tap
     // loads the saved app, a long press forgets it. pressed() is a level read,

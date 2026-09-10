@@ -1,0 +1,9 @@
+#pragma once
+
+// Copy to RecorderSupabaseConfig.h and fill in your Supabase project credentials.
+// Same values as tools/portrait-simulator/supabase.config.json (see SUPABASE.md).
+// RecorderSupabaseConfig.h is gitignored — never commit API keys.
+
+static constexpr const char* RECORDER_SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+static constexpr const char* RECORDER_SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+static constexpr const char* RECORDER_SUPABASE_BUCKET = "recordings";

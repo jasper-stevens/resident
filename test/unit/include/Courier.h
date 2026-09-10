@@ -45,6 +45,7 @@ struct Config {
 // Connection states ResidentSandbox.cpp switches on. Values beyond these
 // exist upstream; the sandbox handles unknowns via `default:`.
 enum class State {
+  Booting,
   Idle,
   WifiConnecting,
   WifiConfiguring,
@@ -73,10 +74,13 @@ public:
     return instance;
   }
 
-  State getState() const { return State::Idle; }
+  State getState() const { return State::Booting; }
   bool isTimeSynced() const { return false; }
   void setup() {}
   void loop() {}
+  void reconnect() {}
+  void suspend() {}
+  void resume() {}
   void setAPName(const char* name) { (void)name; }
 
   void onMessage(std::function<void(const char*, const char*, JsonDocument&)>) {}

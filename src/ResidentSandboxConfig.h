@@ -53,6 +53,10 @@ struct SandboxConfig {
   // this config, drives WiFi/transports, fires onConnected/onMessage/etc.
   // Absence ⇒ standalone runtime, no WiFi pulled in.
   std::optional<Courier::Config> network;
+
+  // When true with network set, Courier is not started in setup(). Call
+  // connectNetwork() to bring up WiFi and transports on demand.
+  bool deferNetworkSetup = false;
 };
 
 } // namespace Resident

@@ -400,6 +400,10 @@ export function createSandbox(canvas, { getButtonPressCount = () => 0, backends 
         lua.lua_pushboolean(L, rec.is_playing());
         return 1;
       },
+      wifi_up() {
+        lua.lua_pushboolean(L, rec.wifi_up());
+        return 1;
+      },
       amplitude() {
         lua.lua_pushnumber(L, rec.amplitude());
         return 1;

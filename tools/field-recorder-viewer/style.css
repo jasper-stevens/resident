@@ -109,7 +109,7 @@ code {
 
 .device-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   gap: 16px;
   align-items: center;
   padding: 14px 16px;
@@ -131,6 +131,21 @@ code {
 .device-id {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.95rem;
+}
+
+.device-kind {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2a3140;
+  color: var(--muted);
+}
+
+.device-kind[data-kind="simulator"] {
+  background: #2a3548;
+  color: #8eb4ff;
 }
 
 .device-meta {

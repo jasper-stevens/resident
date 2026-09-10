@@ -34,9 +34,20 @@ pio run -e m5sticks3 -t upload
 
 The first time the device boots, it creates a Wi-Fi access point named **Resident Stick XXXX**. Connect to it and use the captive portal to give the device your local Wi-Fi credentials. (ESP32 only does 2.4 GHz.)
 
-Once connected to Wi-Fi, the device opens a WebSocket to `wss://resident.inanimate.tech/devices/<deviceId>` and displays its 8-character **device ID** on screen — something like `abc12345`. Note it down; you'll need it to push apps.
+Once connected to Wi-Fi, the device opens a WebSocket to `wss://resident.inanimate.tech/devices/<deviceId>` and displays its 8-character **device ID** on screen — something like `abc12345`. Note it down if you want to push dev apps over WiFi.
 
 The deviceId is derived from the chip's MAC address. It's stable across reboots.
+
+### Field recorder (production build)
+
+This firmware **embeds** `device-apps/field-recorder.lua` at build time. The app loads **immediately on power-on** — no WiFi connection required. To ship an app update, change the Lua and **reflash the device**:
+
+```bash
+cd device
+pio run -e m5sticks3 -t upload   # or m5stick for Plus2
+```
+
+Hot-push over WiFi still works for development, but the embedded copy wins on the next cold boot.
 
 > **Heads up.** `resident.inanimate.tech` is a public relay with no authentication beyond the deviceId itself. Anyone who knows your deviceId can push apps to your device. Fine for hacking; for anything more permanent, run your own server.
 

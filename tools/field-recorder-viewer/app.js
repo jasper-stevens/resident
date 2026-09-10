@@ -90,18 +90,26 @@ function stopPlayback() {
   playingId = null;
 }
 
+function deviceKind(deviceId) {
+  if (String(deviceId).startsWith("sim-")) return "simulator";
+  return "device";
+}
+
 function renderDevices() {
   els.deviceList.innerHTML = "";
   if (devices.length === 0) {
-    els.deviceList.innerHTML = '<p class="empty-state">No recordings yet.</p>';
+    els.deviceList.innerHTML =
+      '<p class="empty-state">No recordings yet. Upload from a simulator or M5Stick with Supabase configured.</p>';
     return;
   }
   for (const dev of devices) {
+    const kind = deviceKind(dev.device_id);
     const row = document.createElement("a");
     row.className = "device-row";
     row.href = `#/device/${encodeURIComponent(dev.device_id)}`;
     row.innerHTML = `
       <span class="device-id">${escapeHtml(dev.device_id)}</span>
+      <span class="device-kind" data-kind="${kind}">${kind}</span>
       <span class="device-meta">${dev.count} clip${dev.count === 1 ? "" : "s"}</span>
       <span class="device-meta">${escapeHtml(fmtTime(dev.latest_at))}</span>
     `;

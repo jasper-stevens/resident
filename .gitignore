@@ -40,6 +40,9 @@ dist/
 # Portrait simulator secrets
 tools/portrait-simulator/supabase.config.json
 tools/field-recorder-viewer/supabase.config.json
+examples/m5stick-demo/device/src/RecorderSupabaseConfig.h
+examples/m5stick-demo/device/src/field-recorder.embed.h
+examples/m5stick-demo/device/lib/drivers/src/RecorderSupabaseConfig.h
 
 # Superpowers subagent-driven-development scratch (briefs, review packages, ledger)
 .superpowers/

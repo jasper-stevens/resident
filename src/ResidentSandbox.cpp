@@ -332,8 +332,14 @@ void Sandbox::setup()
 
   // 6. Kick off Courier (WiFi + transports). The idle screen is then shown on
   // first connection. Standalone has no connection step, so enter it now.
+  // Deferred network: skip Courier until connectNetwork(); show idle UI now.
   if (_courier.has_value()) {
-    _courier->setup();
+    if (_config.deferNetworkSetup) {
+      _networkHeldOff = true;
+      enterIdleScreen();
+    } else {
+      _courier->setup();
+    }
   } else {
     enterIdleScreen();
   }
@@ -450,6 +456,43 @@ void Sandbox::onCourierTransportsWillConnect() {
   if (_onTransportsWillConnect) _onTransportsWillConnect();
 }
 
+void Sandbox::resetCourierClient() {
+  if (!_config.network.has_value()) return;
+  Courier::Config cfg = *_config.network;
+  _courier.reset();
+  _courier.emplace(cfg);
+  _ws = &_courier->transport<Courier::WebSocketTransport>("ws");
+  wireInternalCourierHooks();
+  if (_apName.length() > 0) {
+    _courier->setAPName(_apName.c_str());
+  }
+}
+
+bool Sandbox::canRunAppTick() const {
+  if (!_courier.has_value()) return true;
+  if (isConnected()) return true;
+  return _config.deferNetworkSetup;
+}
+
+void Sandbox::connectNetwork() {
+  if (!_courier.has_value()) return;
+  _networkHeldOff = false;
+  if (_courier->getState() == Courier::State::Booting) {
+    _courier->setup();
+  } else {
+    _courier->reconnect();
+  }
+}
+
+void Sandbox::disconnectNetwork() {
+  if (!_courier.has_value()) return;
+  _networkHeldOff = true;
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  resetCourierClient();
+  onCourierConnectionChange(Courier::State::Booting);
+}
+
 void Sandbox::showStatusText(const char* text)
 {
   if (!_config.statusDisplay) return;
@@ -501,7 +544,7 @@ void Sandbox::showReadyScreen()
 }
 
 void Sandbox::loop() {
-  if (_courier.has_value()) {
+  if (_courier.has_value() && !_networkHeldOff) {
     _courier->loop();
   }
   if (!_lua) return;
@@ -523,8 +566,7 @@ void Sandbox::loop() {
 
   if (_runState != RunState::Running) return;
 
-  // Networked apps tick only once connected (unchanged); standalone always.
-  if (_courier.has_value() && !isConnected()) return;
+  if (!canRunAppTick()) return;
 
   unsigned long now = millis();
   unsigned long elapsed = now - _lastTickTime;

@@ -96,6 +96,6 @@ if (courier.state() == Courier::State::WifiConnected) {
 When moving from simulator to device:
 
 1. Flash firmware with `RecorderDriver` + `GpsDriver` in `cfg.extensions`
-2. Push the same `field-recorder.lua` — no app changes needed
-3. Configure Supabase URL/key in device firmware (not in Lua)
-4. Remove simulator-only WiFi toggle (real WiFi drives events)
+2. The field-recorder Lua is **embedded in firmware** (`device-apps/field-recorder.lua` → build → flash). Reflash to ship app updates; no WiFi push required for production use.
+3. Configure Supabase URL/key in device firmware (`RecorderSupabaseConfig.h`)
+4. WiFi is only needed for cloud upload/sync, not to load the app
